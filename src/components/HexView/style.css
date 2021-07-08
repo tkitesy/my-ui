@@ -1,0 +1,71 @@
+.hex-view {
+  font-family: cursive;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  user-select: none;
+  cursor: default;
+  font-size: 16px;
+  word-spacing: pre;
+}
+
+.hex-view-row {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.hex-view-row > div {
+  padding-left: 8px;
+  padding-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hex-view-header {
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.4);
+  flex: none;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+.hex-view-header .hex-view-address {
+  color: transparent;
+}
+
+.hex-view-content {
+  flex: auto;
+  overflow-y: auto;
+}
+.hex-view-address {
+  font-style: italic;
+}
+.hex-view-cell {
+  height: 20px;
+  width: 20px;
+  padding: 1px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hex-view-cell.ascii {
+  height: 20px;
+  width: 12px;
+}
+
+.hex-view-cell.hover {
+  background-color: #1ea7fd;
+  color: #fff;
+}
+
+.hex-view-cell.selected {
+  background-color: #1ea7fd;
+}
+
+.hex-view-cell.active {
+  background-color: #1ea7fd;
+  border: 1px solid #0f4e75;
+  padding: 1px;
+  color: #fff;
+}
