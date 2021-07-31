@@ -145,6 +145,7 @@ export function HexView({
                 {getBinaryString(dv, i * 16, i * 16 + 16).map((chars, j) => (
                   <Cell
                     chars={chars}
+                    key={j}
                     className="binary"
                     index={i * 16 + j}
                     {...cellProps}
@@ -157,6 +158,7 @@ export function HexView({
                     chars={chars}
                     className="ascii"
                     index={i * 16 + j}
+                    key={j}
                     {...cellProps}
                   />
                 ))}
