@@ -1,7 +1,7 @@
 const path = require("path");
 
 module.exports = {
-  stories: ["../src/**/__stories__/**/*.ts", "../src/**/__stories__/**/*.tsx"],
+  stories: ["../src/**/__stories__/**/*.@(ts|tsx)", "../src//**/*.stories.@(ts|tsx)"],
   webpackFinal: async (config, { configType }) => {
     // `configType` has a value of 'DEVELOPMENT' or 'PRODUCTION'
     // You can change the configuration based on that.

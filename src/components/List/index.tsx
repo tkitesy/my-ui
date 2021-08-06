@@ -1,11 +1,20 @@
-import * as React from "react";
+import * as React from 'react';
 
-type ItemRenderer<ItemType> = (item: ItemType) => React.ReactNode;
+type ItemRenderer<ItemType> = (
+  item: ItemType,
+  index: number
+) => React.ReactElement;
+
+interface ListInstance {
+  scrollTo(offset: number): void;
+  scrollToIndex(index: number): void;
+}
 
 interface ListProps<ItemType = unknown> {
   items: ItemType[];
   renderItem: ItemRenderer<ItemType>;
   itemHeight: number;
+  innerRef?: React.Ref<ListInstance>;
 }
 
 function calculateRange(
@@ -18,12 +27,13 @@ function calculateRange(
   return [start, end];
 }
 
-export function List<ItemType>({
+function List<ItemType>({
   items,
   renderItem,
   itemHeight,
+  innerRef
 }: ListProps<ItemType>) {
-  const root = React.useRef<HTMLDivElement>();
+  const root = React.useRef<HTMLDivElement | null>(null);
   const [, height] = useMeasure(root);
   const [range, setRange] = React.useState([-1, -1]);
 
@@ -45,37 +55,70 @@ export function List<ItemType>({
     }
   }, [root.current, height, itemHeight]);
 
+  const scrollTo = React.useCallback(
+    (offset: number) => {
+      if (root.current) {
+        root.current.scrollTo({ top: offset, behavior: 'auto' });
+      }
+    },
+    [root.current]
+  );
+
+  const scrollToIndex = React.useCallback(
+    (index: number) => {
+      if (root.current) {
+        const offset = itemHeight * index;
+        root.current.scrollTo({ top: offset, behavior: 'auto' });
+      }
+    },
+    [root.current, itemHeight]
+  );
+
+  React.useImperativeHandle(
+    innerRef,
+    () => ({
+      scrollTo,
+      scrollToIndex
+    }),
+    [scrollTo, scrollToIndex]
+  );
+
   return (
     <div
-      className="list list-container"
-      style={{ height: "100%", overflowY: "auto" }}
+      className='list list-container'
+      style={{ height: '100%', overflowY: 'auto' }}
       ref={root}
       onScroll={onScroll}
     >
       <div
-        className="list-content"
-        style={{ height: `${items.length * itemHeight}px` }}
+        className='list-content'
+        style={{
+          height: `${items.length * itemHeight}px`,
+          position: 'relative'
+        }}
       >
-        <div
-          className="list-items-wrapper"
-          style={{ transform: `translateY(${range[0] * itemHeight}px)` }}
-        >
-          {items.slice(...range).map((item, i) => (
-            <div
-              className="list-item"
-              key={i}
-              style={{ height: `${itemHeight}px`, overflowY: "hidden" }}
-            >
-              {renderItem(item)}
-            </div>
-          ))}
-        </div>
+        {items.slice(...range).map((item, i) => (
+          <div
+            className='list-item'
+            key={i}
+            style={{
+              height: `${itemHeight}px`,
+              overflowY: 'hidden',
+              position: 'absolute',
+              width: '100%',
+              top: 0,
+              transform: `translateY(${(i + range[0]) * itemHeight}px)`
+            }}
+          >
+            {renderItem(item, i + range[0])}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function useMeasure(root: React.MutableRefObject<HTMLElement>) {
+function useMeasure(root: React.MutableRefObject<HTMLElement | null>) {
   const [size, setSize] = React.useState([0, 0]);
 
   const observer = React.useMemo(
@@ -97,3 +140,5 @@ function useMeasure(root: React.MutableRefObject<HTMLElement>) {
 
   return size;
 }
+
+export default List;

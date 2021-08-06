@@ -1,5 +1,5 @@
 import * as React from "react";
-import { List } from "..";
+import List from "..";
 
 export default {
   title: "List",
