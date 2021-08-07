@@ -125,23 +125,126 @@ export function useSelection(treeNodes: FlattenTreeNode[]) {
 }
 
 export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
-  const [checkedKeys, setCheckedKeys] = React.useState<NodeKey[]>([]);
+  const [checkedKeys, setCheckedKeys] = React.useState(new Set<NodeKey>());
+  const [halfCheckedKeys, setHalfCheckedKeys] = React.useState(
+    new Set<NodeKey>(),
+  );
 
-  const isChecked = React.useCallback(
-    (key: NodeKey) => checkedKeys.indexOf(key) !== -1,
-    [checkedKeys],
+  const isChecked = React.useCallback((key: NodeKey) => checkedKeys.has(key), [
+    checkedKeys,
+  ]);
+
+  const isHalfChecked = React.useCallback(
+    (key: NodeKey) => halfCheckedKeys.has(key),
+    [halfCheckedKeys],
   );
 
   const check = React.useCallback(
     (key: NodeKey) => {
       const node = treeNodesMap.get(key);
       if (!node) return;
+      const newCheckedKeys = new Set(checkedKeys);
+      const newHalfCheckedKeys = new Set(halfCheckedKeys);
+      // check all children
+      function checkChildren(node: FlattenTreeNode) {
+        newCheckedKeys.add(node.key);
+        newHalfCheckedKeys.delete(node.key);
+        node.children
+          .filter((child) => child.checkable)
+          .forEach((child) => checkChildren(child));
+      }
+      // check parent
+      function checkParent(node: FlattenTreeNode) {
+        const parent = node.parent;
+        if (parent) {
+          const allChildrenChecked = parent.children
+            .filter((child) => child.checkable)
+            .every((child) => newCheckedKeys.has(child.key));
+
+          if (parent.checkable) {
+            if (allChildrenChecked) {
+              newCheckedKeys.add(parent.key);
+              newHalfCheckedKeys.delete(parent.key);
+            } else {
+              const someChildrenChecked = parent.children
+                .filter((child) => child.checkable)
+                .some(
+                  (child) =>
+                    newCheckedKeys.has(child.key) ||
+                    newHalfCheckedKeys.has(child.key),
+                );
+              if (someChildrenChecked) newHalfCheckedKeys.add(parent.key);
+            }
+          }
+
+          checkParent(parent);
+        }
+      }
+      checkChildren(node);
+      checkParent(node);
+      setCheckedKeys(newCheckedKeys);
+      setHalfCheckedKeys(newHalfCheckedKeys);
     },
-    [treeNodesMap],
+    [
+      treeNodesMap,
+      setCheckedKeys,
+      checkedKeys,
+      setHalfCheckedKeys,
+      halfCheckedKeys,
+    ],
+  );
+
+  const uncheck = React.useCallback(
+    (key: NodeKey) => {
+      const node = treeNodesMap.get(key);
+      if (!node) return;
+      const newCheckedKeys = new Set(checkedKeys);
+      const newHalfCheckedKeys = new Set(halfCheckedKeys);
+      // uncheck all children
+      function uncheckChildren(node: FlattenTreeNode) {
+        newCheckedKeys.delete(node.key);
+        newHalfCheckedKeys.delete(node.key);
+        node.children
+          .filter((child) => child.checkable)
+          .forEach((child) => uncheckChildren(child));
+      }
+
+      function uncheckParent(node: FlattenTreeNode) {
+        const parent = node.parent;
+        if (parent) {
+          if (parent.checkable) {
+            newCheckedKeys.delete(parent.key);
+            newHalfCheckedKeys.delete(parent.key);
+            const someChildrenChecked = parent.children
+              .filter((child) => child.checkable)
+              .some(
+                (child) =>
+                  newCheckedKeys.has(child.key) ||
+                  newHalfCheckedKeys.has(child.key),
+              );
+            if (someChildrenChecked) newHalfCheckedKeys.add(parent.key);
+          }
+          uncheckParent(parent);
+        }
+      }
+      uncheckChildren(node);
+      uncheckParent(node);
+      setCheckedKeys(newCheckedKeys);
+      setHalfCheckedKeys(newHalfCheckedKeys);
+    },
+    [
+      treeNodesMap,
+      setCheckedKeys,
+      checkedKeys,
+      setHalfCheckedKeys,
+      halfCheckedKeys,
+    ],
   );
 
   return {
     isChecked,
     check,
+    uncheck,
+    isHalfChecked,
   };
 }

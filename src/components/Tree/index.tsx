@@ -1,7 +1,7 @@
 import * as React from 'react';
 import List from '../List';
 import { FlattenTreeNode, NodeKey, TreeProps } from './interfaces';
-import { useExpanded, useSelection } from './uses';
+import { useCheck, useExpanded, useSelection } from './uses';
 export function Tree<NodeType = unknown>({
   rootNodes,
   getChildren,
@@ -12,7 +12,8 @@ export function Tree<NodeType = unknown>({
   defaultExpand: expand = false,
 }: TreeProps<NodeType>) {
   // 树节点预处理
-  const treeRootNodes = React.useMemo(() => {
+  const [treeRootNodes, treeNodesMap] = React.useMemo(() => {
+    const treeNodesMap = new Map<NodeKey, FlattenTreeNode>();
     function traverse(
       node: NodeType,
       parent: FlattenTreeNode<NodeType> | null,
@@ -35,6 +36,9 @@ export function Tree<NodeType = unknown>({
         icon,
         label,
       };
+
+      treeNodesMap.set(key, flattenNode);
+
       const children = getChildren(node);
       if (children) {
         flattenNode.children = children.map((child, i) =>
@@ -46,7 +50,10 @@ export function Tree<NodeType = unknown>({
       return flattenNode;
     }
 
-    return rootNodes.map((node, i) => traverse(node, null, 0, [i]));
+    return [
+      rootNodes.map((node, i) => traverse(node, null, 0, [i])),
+      treeNodesMap,
+    ];
   }, [rootNodes, getChildren, getKey, getIcon, getCheckable, getLabel]);
 
   const expandLevel =
@@ -101,6 +108,8 @@ export function Tree<NodeType = unknown>({
     [isSelected, unselect, select, selectShifted],
   );
 
+  const { isChecked, uncheck, check, isHalfChecked } = useCheck(treeNodesMap);
+
   return (
     <List
       itemHeight={24}
@@ -109,15 +118,24 @@ export function Tree<NodeType = unknown>({
         const { key, label, isLeaf, level } = node;
         const expanded = isExpanded(key);
         const selected = isSelected(key);
+        const checked = isChecked(key);
+        const halfChecked = isHalfChecked(key);
         return (
           <div key={key} id={key + ''}>
-            <Indent level={level} />
-            <Switcher
+            <TreeNodeIndent level={level} />
+            <TreeNodeSwitcher
               isLeaf={isLeaf}
               onOpen={open}
               onClose={fold}
               expanded={expanded}
               nodeKey={key}
+            />
+            <TreeNodeChecker
+              checked={checked}
+              onUncheck={uncheck}
+              onCheck={check}
+              nodeKey={key}
+              halfChecked={halfChecked}
             />
             <span
               onMouseDown={(e: React.MouseEvent) => handleNodeClick(key, e)}
@@ -132,7 +150,7 @@ export function Tree<NodeType = unknown>({
   );
 }
 
-function Indent({ level }: { level: number }) {
+function TreeNodeIndent({ level }: { level: number }) {
   return (
     <span>
       {new Array(level).fill(0).map((_, i) => (
@@ -144,7 +162,7 @@ function Indent({ level }: { level: number }) {
   );
 }
 
-function Switcher({
+function TreeNodeSwitcher({
   expanded,
   onOpen,
   onClose,
@@ -163,5 +181,29 @@ function Switcher({
     </span>
   ) : (
     <span> </span>
+  );
+}
+
+function TreeNodeChecker({
+  checked,
+  nodeKey,
+  onCheck,
+  onUncheck,
+  halfChecked,
+}: {
+  checked: boolean;
+  halfChecked: boolean;
+  nodeKey: NodeKey;
+  onCheck: (key: NodeKey) => void;
+  onUncheck: (key: NodeKey) => void;
+}) {
+  return (
+    <span style={{ background: halfChecked ? 'red' : 'none' }}>
+      <input
+        type='checkbox'
+        checked={checked}
+        onChange={() => (checked ? onUncheck(nodeKey) : onCheck(nodeKey))}
+      />
+    </span>
   );
 }
