@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { FlattenTreeNode, NodeKey } from './interfaces';
+import { FlattenTreeNode, NodeKey, TreeNodeFilterFn } from './interfaces';
+
+const Empty_Set = new Set<NodeKey>();
 
 export function useExpanded(
   treeRootNodes: FlattenTreeNode[],
@@ -241,10 +243,68 @@ export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
     ],
   );
 
+  const checkAll = React.useCallback(() => {
+    setHalfCheckedKeys(Empty_Set);
+    setCheckedKeys(new Set(treeNodesMap.keys()));
+  }, [setHalfCheckedKeys, setCheckedKeys]);
+
+  const uncheckAll = React.useCallback(() => {
+    setHalfCheckedKeys(Empty_Set);
+    setCheckedKeys(Empty_Set);
+  }, [setCheckedKeys, setHalfCheckedKeys]);
+
   return {
     isChecked,
     check,
+    checkAll,
+    uncheckAll,
     uncheck,
     isHalfChecked,
+  };
+}
+
+export function useFilter<NodeType = unknown>(
+  treeRootNodes: FlattenTreeNode<NodeType>[],
+) {
+  const [remainKeys, setRemainKeys] = React.useState<Set<NodeKey>>(Empty_Set);
+  const [filtering, setFiltering] = React.useState(false);
+  const filter = React.useCallback(
+    (fn: TreeNodeFilterFn<NodeType>) => {
+      setFiltering(true);
+      const newRemainKeys = new Set<NodeKey>();
+      function traverse(node: FlattenTreeNode<NodeType>) {
+        if (fn(node.data)) {
+          newRemainKeys.add(node.key);
+          while (true) {
+            let parent = node.parent;
+            if (parent && !newRemainKeys.has(parent.key)) {
+              newRemainKeys.add(parent.key);
+            } else {
+              break;
+            }
+          }
+        }
+        node.children.forEach((child) => traverse(child));
+      }
+      treeRootNodes.forEach((node) => traverse(node));
+      setRemainKeys(newRemainKeys);
+    },
+    [treeRootNodes, setRemainKeys, setFiltering],
+  );
+
+  const cancelFilter = React.useCallback(
+    () => setFiltering(false),
+    [setFiltering],
+  );
+
+  const isRemain = React.useCallback(
+    (key: NodeKey) => !filtering || remainKeys.has(key),
+    [remainKeys, filtering],
+  );
+
+  return {
+    filter,
+    isRemain,
+    cancelFilter,
   };
 }

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import List from '../List';
 import { FlattenTreeNode, NodeKey, TreeProps } from './interfaces';
-import { useCheck, useExpanded, useSelection } from './uses';
+import { useCheck, useExpanded, useFilter, useSelection } from './uses';
 export function Tree<NodeType = unknown>({
   rootNodes,
   getChildren,
@@ -77,22 +77,25 @@ export function Tree<NodeType = unknown>({
 
   const { isExpanded, open, fold } = useExpanded(treeRootNodes, expandLevel);
   const { isChecked, uncheck, check, isHalfChecked } = useCheck(treeNodesMap);
+  const { filter, cancelFilter, isRemain } = useFilter(treeRootNodes);
 
   // 最终显示的树节点
   const finalTreeNodes = React.useMemo(() => {
     const treeNodes: FlattenTreeNode[] = [];
 
     function traverse(node: FlattenTreeNode) {
-      treeNodes.push(node);
-      const { children, key } = node;
-      const expanded = isExpanded(key);
-      if (expanded) {
-        children.forEach((child) => traverse(child));
+      if (isRemain(node.key)) {
+        treeNodes.push(node);
+        const { children, key } = node;
+        const expanded = isExpanded(key);
+        if (expanded) {
+          children.forEach((child) => traverse(child));
+        }
       }
     }
     treeRootNodes.forEach((node) => traverse(node));
     return treeNodes;
-  }, [treeRootNodes, isExpanded]);
+  }, [treeRootNodes, isExpanded, isRemain]);
 
   const { isSelected, unselect, select, selectShifted } = useSelection(
     finalTreeNodes,
@@ -127,7 +130,7 @@ export function Tree<NodeType = unknown>({
       itemHeight={24}
       items={finalTreeNodes}
       renderItem={(node) => {
-        const { key, label, isLeaf, level } = node;
+        const { key, label, isLeaf, level, icon } = node;
         const expanded = isExpanded(key);
         const selected = isSelected(key);
         const checked = isChecked(key);
@@ -149,6 +152,7 @@ export function Tree<NodeType = unknown>({
               nodeKey={key}
               halfChecked={halfChecked}
             />
+            <TreeNodeIcon>{icon}</TreeNodeIcon>
             <span
               onMouseDown={(e: React.MouseEvent) => handleNodeClick(key, e)}
               style={{ background: selected ? 'red' : 'white' }}
@@ -194,6 +198,10 @@ function TreeNodeSwitcher({
   ) : (
     <span> </span>
   );
+}
+
+function TreeNodeIcon({ children }: { children: React.ReactNode }) {
+  return <span>{children}</span>;
 }
 
 function TreeNodeChecker({
