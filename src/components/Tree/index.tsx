@@ -9,6 +9,7 @@ export function Tree<NodeType = unknown>({
   getLabel,
   getIcon,
   getCheckable,
+  getSelectable,
   defaultExpand: expand = false,
 }: TreeProps<NodeType>) {
   // 树节点预处理
@@ -21,9 +22,11 @@ export function Tree<NodeType = unknown>({
       position: number[],
     ) {
       const key = getKey ? getKey(node) : position.join('-');
-      const label = getLabel(node);
+      const label = getLabel ? getLabel(node) : null;
       const icon = getIcon ? getIcon(node) : null;
       const checkable = getCheckable ? getCheckable(node) : true;
+      const selectable = getSelectable ? getSelectable(node) : true;
+
       const flattenNode: FlattenTreeNode<NodeType> = {
         children: [],
         parent,
@@ -33,6 +36,7 @@ export function Tree<NodeType = unknown>({
         position,
         data: node,
         checkable,
+        selectable,
         icon,
         label,
       };
@@ -54,7 +58,15 @@ export function Tree<NodeType = unknown>({
       rootNodes.map((node, i) => traverse(node, null, 0, [i])),
       treeNodesMap,
     ];
-  }, [rootNodes, getChildren, getKey, getIcon, getCheckable, getLabel]);
+  }, [
+    rootNodes,
+    getChildren,
+    getKey,
+    getIcon,
+    getCheckable,
+    getLabel,
+    getSelectable,
+  ]);
 
   const expandLevel =
     expand === true
@@ -64,6 +76,7 @@ export function Tree<NodeType = unknown>({
       : -1;
 
   const { isExpanded, open, fold } = useExpanded(treeRootNodes, expandLevel);
+  const { isChecked, uncheck, check, isHalfChecked } = useCheck(treeNodesMap);
 
   // 最终显示的树节点
   const finalTreeNodes = React.useMemo(() => {
@@ -85,6 +98,7 @@ export function Tree<NodeType = unknown>({
     finalTreeNodes,
   );
 
+  // 选中处理 点击可选中或取消，shift可以范围
   const handleNodeClick = React.useCallback(
     (key: NodeKey, e: React.MouseEvent) => {
       const left = e.button === 0;
@@ -107,8 +121,6 @@ export function Tree<NodeType = unknown>({
     },
     [isSelected, unselect, select, selectShifted],
   );
-
-  const { isChecked, uncheck, check, isHalfChecked } = useCheck(treeNodesMap);
 
   return (
     <List
