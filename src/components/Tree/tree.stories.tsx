@@ -21,6 +21,7 @@ export function BaseDemo() {
         getChildren={(data) => data.areaList}
         getLabel={(data) => data.name}
         defaultExpand={0}
+        selectedKeys={["0"]}
       />
     </div>
   );

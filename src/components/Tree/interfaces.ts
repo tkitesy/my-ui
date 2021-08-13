@@ -1,7 +1,6 @@
 import * as React from 'react';
-export type NodeKey = string | number;
 
-type CustomizableTreeNode<R> = (node: NodeKey) => R;
+export type NodeKey = string | number;
 
 export interface TreeProps<NodeType = unknown> {
   rootNodes: NodeType[];
@@ -12,6 +11,8 @@ export interface TreeProps<NodeType = unknown> {
   getCheckable?: (node: NodeType) => boolean;
   getSelectable?: (node: NodeType) => boolean;
   defaultExpand?: boolean | number;
+  selectedKeys:NodeKey[],
+  onSelectedKeysChange?:(keys:NodeKey[]) => void;
 }
 
 export interface FlattenTreeNode<NodeType = unknown> {

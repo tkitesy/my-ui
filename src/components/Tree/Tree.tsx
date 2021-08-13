@@ -2,16 +2,17 @@ import * as React from 'react';
 import List from '../List';
 import { FlattenTreeNode, NodeKey, TreeProps } from './interfaces';
 import { useCheck, useExpanded, useFilter, useSelection } from './uses';
-export function Tree<NodeType = unknown>({
-  rootNodes,
-  getChildren,
-  getKey,
-  getLabel,
-  getIcon,
-  getCheckable,
-  getSelectable,
-  defaultExpand: expand = false,
-}: TreeProps<NodeType>) {
+export function Tree<NodeType = unknown>(props: TreeProps<NodeType>) {
+  const {
+    rootNodes,
+    getChildren,
+    getKey,
+    getLabel,
+    getIcon,
+    getCheckable,
+    getSelectable,
+    defaultExpand: expand = false,
+  } = props;
   // 树节点预处理
   const [treeRootNodes, treeNodesMap] = React.useMemo(() => {
     const treeNodesMap = new Map<NodeKey, FlattenTreeNode>();
@@ -98,6 +99,7 @@ export function Tree<NodeType = unknown>({
   }, [treeRootNodes, isExpanded, isRemain]);
 
   const { isSelected, unselect, select, selectShifted } = useSelection(
+    props,
     finalTreeNodes,
   );
 

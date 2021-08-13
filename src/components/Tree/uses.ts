@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { FlattenTreeNode, NodeKey, TreeNodeFilterFn } from './interfaces';
+import { useMaybeControlled } from '../../utils';
+import {
+  FlattenTreeNode,
+  NodeKey,
+  TreeNodeFilterFn,
+  TreeProps,
+} from './interfaces';
 
 const Empty_Set = new Set<NodeKey>();
 
@@ -57,8 +63,13 @@ export function useExpanded(
   };
 }
 
-export function useSelection(treeNodes: FlattenTreeNode[]) {
-  const [selectedKeys, setSelectedKeys] = React.useState<NodeKey[]>([]);
+export function useSelection(props: TreeProps, treeNodes: FlattenTreeNode[]) {
+  const [selectedKeys, setSelectedKeys] = useMaybeControlled(
+    props,
+    [] as NodeKey[],
+    'selectedKeys',
+    'onSelectedKeysChange',
+  );
   const lastSelectedKey = React.useRef<NodeKey | null>(null);
 
   const isSelected = React.useCallback(
@@ -68,19 +79,19 @@ export function useSelection(treeNodes: FlattenTreeNode[]) {
 
   const select = React.useCallback(
     (key: NodeKey) => {
-      setSelectedKeys((old) => [...old, key]);
+      setSelectedKeys([...selectedKeys, key]);
       lastSelectedKey.current = key;
     },
-    [setSelectedKeys],
+    [setSelectedKeys, selectedKeys],
   );
 
   const unselect = React.useCallback(
-    (key: NodeKey) => setSelectedKeys((old) => old.filter((k) => key !== k)),
-    [setSelectedKeys],
+    (key: NodeKey) => setSelectedKeys(selectedKeys.filter((k) => key !== k)),
+    [setSelectedKeys, selectedKeys],
   );
 
   const selectAll = React.useCallback(
-    () => setSelectedKeys(() => treeNodes.map((node) => node.key)),
+    () => setSelectedKeys(treeNodes.map((node) => node.key)),
     [treeNodes, setSelectedKeys],
   );
 
@@ -96,14 +107,14 @@ export function useSelection(treeNodes: FlattenTreeNode[]) {
           : treeNodes.findIndex((node) => node.key === lastSelectedKey.current);
 
       if (startIndex < 0) {
-        setSelectedKeys(() => [key]);
+        setSelectedKeys([key]);
       }
       const endIndex = treeNodes.findIndex((node) => node.key === key);
       if (endIndex < 0) {
         return;
       }
 
-      setSelectedKeys(() =>
+      setSelectedKeys(
         treeNodes
           .slice(
             Math.min(startIndex, endIndex),
@@ -292,10 +303,9 @@ export function useFilter<NodeType = unknown>(
     [treeRootNodes, setRemainKeys, setFiltering],
   );
 
-  const cancelFilter = React.useCallback(
-    () => setFiltering(false),
-    [setFiltering],
-  );
+  const cancelFilter = React.useCallback(() => setFiltering(false), [
+    setFiltering,
+  ]);
 
   const isRemain = React.useCallback(
     (key: NodeKey) => !filtering || remainKeys.has(key),
