@@ -2,8 +2,6 @@ import * as React from 'react';
 import { TableProps } from './interfaces';
 
 export function Table<DataType>({}: TableProps<DataType>) {
-  
-  
   return (
     <div>
       <div>
@@ -18,8 +16,4 @@ export function Table<DataType>({}: TableProps<DataType>) {
       </div>
     </div>
   );
-}
-
-function Colgroup() {
-  return <colgroup></colgroup>;
 }

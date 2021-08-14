@@ -10,6 +10,7 @@ import {
 const Empty_Set = new Set<NodeKey>();
 
 export function useExpanded(
+  props: TreeProps,
   treeRootNodes: FlattenTreeNode[],
   expandLevel: number,
 ) {
@@ -33,8 +34,11 @@ export function useExpanded(
     return [allKeys, defaultExpandedKeys];
   }, [treeRootNodes]);
 
-  const [expandedKeys, setExpandedKeys] = React.useState<NodeKey[]>(
+  const [expandedKeys, setExpandedKeys] = useMaybeControlled(
+    props,
     defaultExpandedKeys,
+    'expandedKeys',
+    'onExpandedKeysChange',
   );
 
   const isExpanded = React.useCallback(
@@ -43,13 +47,13 @@ export function useExpanded(
   );
 
   const open = React.useCallback(
-    (key: NodeKey) => setExpandedKeys((old) => [...old, key]),
-    [],
+    (key: NodeKey) => setExpandedKeys([...expandedKeys, key]),
+    [expandedKeys],
   );
 
   const fold = React.useCallback(
-    (key: NodeKey) => setExpandedKeys((old) => old.filter((k) => key !== k)),
-    [],
+    (key: NodeKey) => setExpandedKeys(expandedKeys.filter((k) => key !== k)),
+    [expandedKeys],
   );
 
   const foldAll = React.useCallback(() => setExpandedKeys(allKeys), [allKeys]);
@@ -137,11 +141,23 @@ export function useSelection(props: TreeProps, treeNodes: FlattenTreeNode[]) {
   };
 }
 
-export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
-  const [checkedKeys, setCheckedKeys] = React.useState(new Set<NodeKey>());
+export function useCheck(
+  props: TreeProps,
+  treeNodesMap: Map<NodeKey, FlattenTreeNode>,
+) {
+  const [_checkedKeys, setCheckedKeys] = useMaybeControlled(
+    props,
+    [] as NodeKey[],
+    'checkedKeys',
+    'onExpandedKeysChange',
+  );
   const [halfCheckedKeys, setHalfCheckedKeys] = React.useState(
     new Set<NodeKey>(),
   );
+
+  const checkedKeys = React.useMemo(() => new Set(_checkedKeys), [
+    _checkedKeys,
+  ]);
 
   const isChecked = React.useCallback((key: NodeKey) => checkedKeys.has(key), [
     checkedKeys,
@@ -195,7 +211,7 @@ export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
       }
       checkChildren(node);
       checkParent(node);
-      setCheckedKeys(newCheckedKeys);
+      setCheckedKeys(Array.from(newCheckedKeys));
       setHalfCheckedKeys(newHalfCheckedKeys);
     },
     [
@@ -242,7 +258,7 @@ export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
       }
       uncheckChildren(node);
       uncheckParent(node);
-      setCheckedKeys(newCheckedKeys);
+      setCheckedKeys(Array.from(newCheckedKeys));
       setHalfCheckedKeys(newHalfCheckedKeys);
     },
     [
@@ -256,12 +272,12 @@ export function useCheck(treeNodesMap: Map<NodeKey, FlattenTreeNode>) {
 
   const checkAll = React.useCallback(() => {
     setHalfCheckedKeys(Empty_Set);
-    setCheckedKeys(new Set(treeNodesMap.keys()));
+    setCheckedKeys(Array.from(treeNodesMap.keys()));
   }, [setHalfCheckedKeys, setCheckedKeys]);
 
   const uncheckAll = React.useCallback(() => {
     setHalfCheckedKeys(Empty_Set);
-    setCheckedKeys(Empty_Set);
+    setCheckedKeys([]);
   }, [setCheckedKeys, setHalfCheckedKeys]);
 
   return {

@@ -76,8 +76,15 @@ export function Tree<NodeType = unknown>(props: TreeProps<NodeType>) {
       ? expand
       : -1;
 
-  const { isExpanded, open, fold } = useExpanded(treeRootNodes, expandLevel);
-  const { isChecked, uncheck, check, isHalfChecked } = useCheck(treeNodesMap);
+  const { isExpanded, open, fold } = useExpanded(
+    props,
+    treeRootNodes,
+    expandLevel,
+  );
+  const { isChecked, uncheck, check, isHalfChecked } = useCheck(
+    props,
+    treeNodesMap,
+  );
   const { filter, cancelFilter, isRemain } = useFilter(treeRootNodes);
 
   // 最终显示的树节点
@@ -132,7 +139,7 @@ export function Tree<NodeType = unknown>(props: TreeProps<NodeType>) {
       itemHeight={24}
       items={finalTreeNodes}
       renderItem={(node) => {
-        const { key, label, isLeaf, level, icon } = node;
+        const { key, label, isLeaf, level, icon, selectable } = node;
         const expanded = isExpanded(key);
         const selected = isSelected(key);
         const checked = isChecked(key);
@@ -156,7 +163,11 @@ export function Tree<NodeType = unknown>(props: TreeProps<NodeType>) {
             />
             <TreeNodeIcon>{icon}</TreeNodeIcon>
             <span
-              onMouseDown={(e: React.MouseEvent) => handleNodeClick(key, e)}
+              onMouseDown={
+                selectable
+                  ? (e: React.MouseEvent) => handleNodeClick(key, e)
+                  : undefined
+              }
               style={{ background: selected ? 'red' : 'white' }}
             >
               {label}

@@ -11,8 +11,12 @@ export interface TreeProps<NodeType = unknown> {
   getCheckable?: (node: NodeType) => boolean;
   getSelectable?: (node: NodeType) => boolean;
   defaultExpand?: boolean | number;
-  selectedKeys:NodeKey[],
-  onSelectedKeysChange?:(keys:NodeKey[]) => void;
+  selectedKeys: NodeKey[];
+  onSelectedKeysChange?: (keys: NodeKey[]) => void;
+  expandedKeys?: NodeKey[];
+  onExpandedKeysChange?: (keys: NodeKey[]) => void;
+  checkedKeys?: NodeKey[];
+  onCheckedKeysChange?: (keys: NodeKey[]) => void;
 }
 
 export interface FlattenTreeNode<NodeType = unknown> {

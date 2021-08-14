@@ -7,8 +7,8 @@ export interface Column<DataType = unknown> {
   key?: ColumnKey;
   width?: number | string;
   title?: React.ReactNode;
-  renderTitle?(): React.ReactNode;
   dataIndex?: keyof DataType;
+  renderHeader?(): React.ReactNode;
   render?(data: DataType): React.ReactNode;
   sortable?: boolean;
   visible?: boolean;
@@ -16,8 +16,7 @@ export interface Column<DataType = unknown> {
 }
 
 export interface TableProps<DataType = unknown> {
-  rowKey: keyof DataType;
-  data: DataType[];
+  rowKey?: keyof DataType | ((row: DataType) => RowKey);
+  data?: DataType[];
   cols: Column<DataType>;
 }
-
