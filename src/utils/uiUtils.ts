@@ -22,3 +22,26 @@ export function useMaybeControlled<Props extends Record<string, any>, T>(
 
   return [text, changeText];
 }
+
+export function useMeasure(root: React.RefObject<HTMLElement | null>) {
+  const [size, setSize] = React.useState([-1, -1]);
+
+  const observer = React.useMemo(
+    () =>
+      new ResizeObserver((entry) => {
+        const { width, height } = entry[0].target.getBoundingClientRect();
+        setSize([width, height]);
+      }),
+    [setSize],
+  );
+
+  React.useEffect(() => {
+    if (root.current) {
+      observer.observe(root.current);
+      return () => observer.disconnect();
+    }
+    return () => {};
+  }, [root.current]);
+
+  return size;
+}

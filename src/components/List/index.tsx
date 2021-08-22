@@ -1,13 +1,15 @@
 import * as React from 'react';
+import { useMeasure } from '../../utils';
 
 type ItemRenderer<ItemType> = (
   item: ItemType,
-  index: number
+  index: number,
 ) => React.ReactElement;
 
 interface ListInstance {
   scrollTo(offset: number): void;
   scrollToIndex(index: number): void;
+  scrollToIndexIfNeeded(index: number): void;
 }
 
 interface ListProps<ItemType = unknown> {
@@ -20,7 +22,7 @@ interface ListProps<ItemType = unknown> {
 function calculateRange(
   scrollTop: number,
   itemHeight: number,
-  containerHeight: number
+  containerHeight: number,
 ) {
   const start = Math.floor(scrollTop / itemHeight);
   const end = Math.ceil((scrollTop + containerHeight) / itemHeight);
@@ -31,7 +33,7 @@ function List<ItemType>({
   items,
   renderItem,
   itemHeight,
-  innerRef
+  innerRef,
 }: ListProps<ItemType>) {
   const root = React.useRef<HTMLDivElement | null>(null);
   const [, height] = useMeasure(root);
@@ -44,7 +46,7 @@ function List<ItemType>({
       setRange(range);
     },
 
-    [itemHeight, height]
+    [itemHeight, height],
   );
 
   React.useEffect(() => {
@@ -61,7 +63,7 @@ function List<ItemType>({
         root.current.scrollTo({ top: offset, behavior: 'auto' });
       }
     },
-    [root.current]
+    [root.current],
   );
 
   const scrollToIndex = React.useCallback(
@@ -71,21 +73,37 @@ function List<ItemType>({
         root.current.scrollTo({ top: offset, behavior: 'auto' });
       }
     },
-    [root.current, itemHeight]
+    [root.current, itemHeight],
+  );
+
+  const scrollToIndexIfNeeded = React.useCallback(
+    (index: number) => {
+      if (root.current) {
+        const offset = itemHeight * index;
+        const scrollTop = root.current.scrollTop;
+        if (scrollTop > offset) {
+          root.current.scrollTo({ top: offset, behavior: 'auto' });
+        } else if (scrollTop < offset + height + itemHeight) {
+          root.current.scrollTo({ top: offset + height, behavior: 'auto' });
+        }
+      }
+    },
+    [root.current, height],
   );
 
   React.useImperativeHandle(
     innerRef,
     () => ({
       scrollTo,
-      scrollToIndex
+      scrollToIndex,
+      scrollToIndexIfNeeded,
     }),
-    [scrollTo, scrollToIndex]
+    [scrollTo, scrollToIndex],
   );
 
   return (
     <div
-      className='list list-container'
+      className='my-list list-container'
       style={{ height: '100%', overflowY: 'auto' }}
       ref={root}
       onScroll={onScroll}
@@ -94,7 +112,7 @@ function List<ItemType>({
         className='list-content'
         style={{
           height: `${items.length * itemHeight}px`,
-          position: 'relative'
+          position: 'relative',
         }}
       >
         {items.slice(...range).map((item, i) => (
@@ -107,7 +125,7 @@ function List<ItemType>({
               position: 'absolute',
               width: '100%',
               top: 0,
-              transform: `translateY(${(i + range[0]) * itemHeight}px)`
+              transform: `translateY(${(i + range[0]) * itemHeight}px)`,
             }}
           >
             {renderItem(item, i + range[0])}
@@ -116,29 +134,6 @@ function List<ItemType>({
       </div>
     </div>
   );
-}
-
-function useMeasure(root: React.MutableRefObject<HTMLElement | null>) {
-  const [size, setSize] = React.useState([0, 0]);
-
-  const observer = React.useMemo(
-    () =>
-      new ResizeObserver((entry) => {
-        const { width, height } = entry[0].target.getBoundingClientRect();
-        setSize([width, height]);
-      }),
-    [setSize]
-  );
-
-  React.useEffect(() => {
-    if (root.current) {
-      observer.observe(root.current);
-      return () => observer.disconnect();
-    }
-    return () => {};
-  }, [root.current]);
-
-  return size;
 }
 
 export default List;

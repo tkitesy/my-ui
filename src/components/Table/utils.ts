@@ -1,7 +1,7 @@
-import { Column, ColumnKey } from './interfaces';
-const InnerKey = "__my_inner_key";
+import { ColumnType, ColumnKey } from './interfaces';
+const InnerKey = "__inner_key";
 
-export function getColumnKeys(cols: Column[]) {
+export function getColumnKeys<DataType>(cols: ColumnType<DataType>[]) {
   const keys = new Set<ColumnKey>();
   cols.forEach((column) => {
     let { key = InnerKey } = column;

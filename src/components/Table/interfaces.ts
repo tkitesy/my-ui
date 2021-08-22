@@ -3,20 +3,20 @@ import * as React from 'react';
 export type ColumnKey = string | number;
 export type RowKey = string | number;
 
-export interface Column<DataType = unknown> {
+export interface ColumnType<DataType = unknown> {
   key?: ColumnKey;
   width?: number | string;
   title?: React.ReactNode;
-  dataIndex?: keyof DataType;
-  renderHeader?(): React.ReactNode;
+  renderTitle?(): React.ReactNode;
+  dataIndex?: string | number;
   render?(data: DataType): React.ReactNode;
   sortable?: boolean;
-  visible?: boolean;
   filterable?: boolean;
+  fixed?: 'left' | 'right' | boolean;
 }
 
 export interface TableProps<DataType = unknown> {
   rowKey?: keyof DataType | ((row: DataType) => RowKey);
   data?: DataType[];
-  cols: Column<DataType>;
+  cols: ColumnType<DataType>[];
 }
