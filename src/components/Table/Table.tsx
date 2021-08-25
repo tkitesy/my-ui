@@ -15,8 +15,6 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
   );
   const onColumnResize = React.useCallback(
     (colKey: ColumnKey, width: number) => {
-      console.log(colKey, width);
-
       updateColsWidths((widths) => {
         return {
           ...widths,
@@ -51,20 +49,51 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
     [syncScrollLeft],
   );
 
-  const headCols = [...cols, { key: '_INNER_SCROLLBAR' }];
-  const headWidths = [
-    ...cols.map((col) => (col.key ? colsWidths[col.key] : 0)),
-    17,
-  ];
-
+  const headCols = cols;
+  const headWidths = cols.map((col) => (col.key ? colsWidths[col.key] : 0));
   const [windowSize, _] = useMeasure(bodyRef);
 
   const [stickyInfo, fixedIndex] = useFixedInfo(
     headCols,
     headWidths,
-    windowSize,
+    windowSize - 17,
     size.contentSize,
     size.offset,
+  );
+
+  const getFixedStyle = React.useCallback(
+    (index: number) => {
+      const style: React.CSSProperties = {};
+      if (
+        fixedIndex.left.indexOf(index) !== -1 &&
+        stickyInfo.left[index] !== -1
+      ) {
+        style.position = 'sticky';
+        style.left = stickyInfo.left[index] + 'px';
+      }
+      if (
+        fixedIndex.right.indexOf(index) !== -1 &&
+        stickyInfo.right[index] !== -1
+      ) {
+        style.position = 'sticky';
+        style.right = stickyInfo.right[index] + 'px';
+      }
+      return style;
+    },
+    [stickyInfo, fixedIndex],
+  );
+
+  const getFixedClass = React.useCallback(
+    (index: number) => {
+      if (index === fixedIndex.left[0]) {
+        return 'fixed-left-last';
+      }
+      if (index === fixedIndex.right[0]) {
+        return 'fixed-right-last';
+      }
+      return '';
+    },
+    [fixedIndex],
   );
 
   return (
@@ -76,15 +105,8 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
             <tr>
               {cols.map((col, index) => (
                 <td
-                  style={
-                    stickyInfo.left[index] > -1
-                      ? {
-                          position: 'sticky',
-                          left: stickyInfo.left[index],
-                          backgroundColor: '#fff',
-                        }
-                      : {}
-                  }
+                  style={getFixedStyle(index)}
+                  className={getFixedClass(index)}
                 >
                   {col.title}
                 </td>
@@ -105,15 +127,8 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
               {cols.map((col, index) => (
                 <td
                   key={col.key ?? index}
-                  style={
-                    stickyInfo.left[index] > -1
-                      ? {
-                          position: 'sticky',
-                          left: stickyInfo.left[index],
-                          backgroundColor: '#fff',
-                        }
-                      : {}
-                  }
+                  style={getFixedStyle(index)}
+                  className={getFixedClass(index)}
                 >
                   <MeasureCell
                     colKey={col.key ?? index}
@@ -128,15 +143,8 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
                   {cols.map((col, index) => (
                     <td
                       key={col.key ?? index}
-                      style={
-                        stickyInfo.left[index] > -1
-                          ? {
-                              position: 'sticky',
-                              left: stickyInfo.left[index],
-                              backgroundColor: '#fff',
-                            }
-                          : {}
-                      }
+                      style={getFixedStyle(index)}
+                      className={getFixedClass(index)}
                     >
                       {col.dataIndex ? row[col.dataIndex] : ''}
                     </td>
@@ -151,5 +159,7 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
 }
 
 const TableComponent: React.FC = ({ children }) => (
-  <table style={{ tableLayout: 'fixed', width: '100%' }}>{children}</table>
+  <table style={{ tableLayout: 'fixed', width: '100%', height: '100%' }}>
+    {children}
+  </table>
 );

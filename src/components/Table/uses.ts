@@ -63,23 +63,24 @@ export function useFixedInfo(
         left += widths[start];
       }
       if (rightCol.fixed === 'right' || rightCol.fixed === true) {
-        stickyInfo.right[start] = right;
-        right += widths[start];
+        stickyInfo.right[end] = right;
+        right += widths[end];
       }
     });
     return stickyInfo;
   }, [widths, columns]);
 
   const fixedIndex = React.useMemo(() => {
-    const offsetLeft = offset;
     const len = columns.length;
     let leftFixedSize = 0;
+    let offsetLeft = offset;
     const leftFixedIndexStack: number[] = [];
     for (let start = 0; start < len; start++) {
       const leftCol = columns[start];
       if (leftCol.fixed === 'left' || leftCol.fixed === true) {
-        if (offsetLeft >= leftFixedSize) {
-          leftFixedIndexStack.push(start);
+        if (offsetLeft > leftFixedSize) {
+          leftFixedIndexStack.unshift(start);
+          offsetLeft += widths[start];
         }else {
           break;
         }
@@ -87,25 +88,27 @@ export function useFixedInfo(
       leftFixedSize += widths[start];
     }
     let rightFixedSize = 0;
+    let offsetRight = contentSize - (windowSize + offset);
+    
     const rightFixedIndexStack: number[] = [];
-    const offsetRight = contentSize - (windowSize + offsetLeft);
     for (let end = len - 1; end > -1; end--) {
       const rightCol = columns[end];
       if (rightCol.fixed === 'right' || rightCol.fixed === true) {
-        if (offsetRight >= rightFixedSize) {
-          rightFixedSize += widths[end];
+        if (offsetRight > rightFixedSize) {
+          rightFixedIndexStack.unshift(end);
+          offsetRight += widths[end];
         }else {
           break;
         }
       }
-      rightFixedIndexStack.push(end);
+      rightFixedSize += widths[end];
     }
 
     return {
       left: leftFixedIndexStack,
       right: rightFixedIndexStack,
     };
-  }, []);
+  }, [contentSize, windowSize, offset]);
 
   return [stickyInfo, fixedIndex];
 }
