@@ -6,6 +6,8 @@ import { useFixedInfo, useLayoutState } from './uses';
 import './style.css';
 import classNames from 'classnames';
 import { useMeasure } from '../../utils';
+import { THead } from './THead';
+import { TBody } from './TBody';
 
 export function Table<DataType>({ cols, data }: TableProps<DataType>) {
   const bodyRef = React.useRef<HTMLDivElement>(null);
@@ -101,19 +103,11 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
       <div ref={headRef} className='my-table-head-wrapper'>
         <TableComponent>
           <ColGroup cols={headCols} colWidths={headWidths} />
-          <thead>
-            <tr>
-              {cols.map((col, index) => (
-                <td
-                  style={getFixedStyle(index)}
-                  className={getFixedClass(index)}
-                >
-                  {col.title}
-                </td>
-              ))}
-              <td />
-            </tr>
-          </thead>
+          <THead
+            cols={cols}
+            getFixedStyle={getFixedStyle}
+            getFixedClass={getFixedClass}
+          />
         </TableComponent>
       </div>
       <div ref={bodyRef} className='my-table-body-wrapper' onScroll={onScroll}>
@@ -122,36 +116,13 @@ export function Table<DataType>({ cols, data }: TableProps<DataType>) {
             cols={cols}
             colWidths={cols.map((col) => col.width || -1)}
           />
-          <tbody>
-            <tr>
-              {cols.map((col, index) => (
-                <td
-                  key={col.key ?? index}
-                  style={getFixedStyle(index)}
-                  className={getFixedClass(index)}
-                >
-                  <MeasureCell
-                    colKey={col.key ?? index}
-                    onColumnResize={onColumnResize}
-                  />
-                </td>
-              ))}
-            </tr>
-            {data &&
-              data.map((row) => (
-                <tr>
-                  {cols.map((col, index) => (
-                    <td
-                      key={col.key ?? index}
-                      style={getFixedStyle(index)}
-                      className={getFixedClass(index)}
-                    >
-                      {col.dataIndex ? row[col.dataIndex] : ''}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-          </tbody>
+          <TBody
+            data={data}
+            cols={cols}
+            getFixedClass={getFixedClass}
+            getFixedStyle={getFixedStyle}
+            onColumnResize={onColumnResize}
+          />
         </TableComponent>
       </div>
     </div>
